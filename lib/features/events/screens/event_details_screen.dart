@@ -1,165 +1,403 @@
 import 'package:flutter/material.dart';
+import '../../../core/data/mock_events.dart';
+import '../../../shared/widgets/event_banner.dart';
 
-class EventDetailsScreen extends StatelessWidget {
+class EventDetailsScreen extends StatefulWidget {
   const EventDetailsScreen({super.key});
 
   @override
+  State<EventDetailsScreen> createState() => _EventDetailsScreenState();
+}
+
+class _EventDetailsScreenState extends State<EventDetailsScreen> {
+  int _quantity = 0;
+  int _selectedLote = 0;
+  bool _liked = false;
+  bool _showFullDescription = false;
+
+  @override
   Widget build(BuildContext context) {
+    final event =
+        ModalRoute.of(context)?.settings.arguments as EventData? ?? mockEvents[0];
+
+    final selectedPrice = event.lotesPrices[_selectedLote];
+    final taxAmount = selectedPrice * event.taxRate;
+
     return Scaffold(
       backgroundColor: Colors.white,
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios, color: Colors.black87),
-          onPressed: () => Navigator.pop(context),
-        ),
-      ),
-      body: SingleChildScrollView(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Container(
-              height: 200,
-              width: double.infinity,
-              color: Theme.of(context).colorScheme.primary, // Pink background
-              child: const Center(
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Text('T', style: TextStyle(fontSize: 80, fontWeight: FontWeight.bold, color: Colors.white, shadows: [Shadow(color: Colors.black26, offset: Offset(2, 2))])),
-                    Text('T', style: TextStyle(fontSize: 80, fontWeight: FontWeight.bold, color: Colors.white, shadows: [Shadow(color: Colors.black26, offset: Offset(2, 2))])),
-                    Text('T', style: TextStyle(fontSize: 80, fontWeight: FontWeight.bold, color: Colors.white, shadows: [Shadow(color: Colors.black26, offset: Offset(2, 2))])),
-                  ],
+      body: CustomScrollView(
+        slivers: [
+          // Custom app bar with event banner
+          SliverAppBar(
+            expandedHeight: 280,
+            pinned: true,
+            backgroundColor: Colors.white,
+            leading: GestureDetector(
+              onTap: () => Navigator.pop(context),
+              child: Container(
+                margin: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: Colors.black.withOpacity(0.3),
+                  shape: BoxShape.circle,
                 ),
+                child: const Icon(Icons.arrow_back, color: Colors.white),
               ),
             ),
-            Padding(
-              padding: const EdgeInsets.all(24.0),
+            flexibleSpace: FlexibleSpaceBar(
+              background: EventBanner(
+                colorIndex: event.colorIndex,
+                height: 280,
+              ),
+            ),
+          ),
+
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.all(20.0),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
-                    'TTT EVENTOS UNICAMP',
-                    style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+                  // Event name
+                  Text(
+                    event.name,
+                    style: const TextStyle(
+                      fontSize: 22,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.black87,
+                    ),
                   ),
-                  const SizedBox(height: 16),
-                  const Row(
+                  const SizedBox(height: 12),
+
+                  // Date
+                  Row(
                     children: [
-                      Icon(Icons.calendar_today, color: Colors.grey, size: 16),
-                      SizedBox(width: 8),
-                      Text('12 de Set. 14:00 até 12 de Set. às 00:00', style: TextStyle(color: Colors.grey, fontSize: 14)),
+                      const Icon(Icons.calendar_today,
+                          color: Colors.grey, size: 16),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          event.dateDetail,
+                          style: const TextStyle(
+                              color: Colors.grey, fontSize: 14),
+                        ),
+                      ),
                     ],
                   ),
                   const SizedBox(height: 8),
-                  const Row(
-                    children: [
-                      Icon(Icons.location_on, color: Colors.grey, size: 16),
-                      SizedBox(width: 8),
-                      Text('Espaço DaVila Limeira', style: TextStyle(color: Colors.grey, fontSize: 14)),
-                    ],
-                  ),
-                  const SizedBox(height: 24),
-                  
-                  // Action Icons
+
+                  // Location
                   Row(
                     children: [
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                        decoration: BoxDecoration(color: Colors.grey.shade200, borderRadius: BorderRadius.circular(20)),
-                        child: const Row(
-                          children: [
-                            Icon(Icons.favorite, color: Colors.grey, size: 18),
-                            SizedBox(width: 8),
-                            Text('2041', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.grey)),
-                          ],
+                      const Icon(Icons.location_on,
+                          color: Colors.grey, size: 16),
+                      const SizedBox(width: 8),
+                      Text(
+                        event.location,
+                        style: const TextStyle(
+                          color: Color(0xFF1E88E5),
+                          fontSize: 14,
+                          decoration: TextDecoration.underline,
                         ),
-                      ),
-                      const SizedBox(width: 12),
-                      Container(
-                        padding: const EdgeInsets.all(8),
-                        decoration: BoxDecoration(color: Colors.grey.shade200, shape: BoxShape.circle),
-                        child: const Icon(Icons.ios_share, color: Colors.grey, size: 18),
-                      ),
-                      const SizedBox(width: 12),
-                      Container(
-                        padding: const EdgeInsets.all(8),
-                        decoration: BoxDecoration(color: Colors.grey.shade200, shape: BoxShape.circle),
-                        child: const Icon(Icons.file_download_outlined, color: Colors.grey, size: 18),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 32),
-                  
-                  const Text('Ingressos', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                  const SizedBox(height: 16),
-                  Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: Colors.grey.shade100,
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        const Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text('1º Lote', style: TextStyle(fontWeight: FontWeight.bold)),
-                            SizedBox(height: 4),
-                            Text('R\$ 75,00', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                            SizedBox(height: 4),
-                            Text('+ taxas, a partir de R\$ 7,50', style: TextStyle(fontSize: 12, color: Colors.grey)),
-                          ],
-                        ),
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  const SizedBox(height: 20),
+
+                  // Action icons row (like, instagram, share)
+                  Row(
+                    children: [
+                      // Like button
+                      GestureDetector(
+                        onTap: () => setState(() => _liked = !_liked),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 14, vertical: 8),
                           decoration: BoxDecoration(
-                            color: Colors.white,
+                            color: _liked
+                                ? const Color(0xFFE91E63).withOpacity(0.1)
+                                : Colors.grey.shade100,
                             borderRadius: BorderRadius.circular(20),
-                            border: Border.all(color: Colors.grey.shade300),
                           ),
                           child: Row(
                             children: [
-                              const Icon(Icons.remove, size: 16, color: Colors.grey),
-                              const SizedBox(width: 12),
-                              const Text('1', style: TextStyle(fontWeight: FontWeight.bold)),
-                              const SizedBox(width: 12),
-                              Icon(Icons.add, size: 16, color: Theme.of(context).colorScheme.primary),
+                              Icon(
+                                _liked
+                                    ? Icons.favorite
+                                    : Icons.favorite_border,
+                                color: _liked
+                                    ? const Color(0xFFE91E63)
+                                    : Colors.grey,
+                                size: 20,
+                              ),
+                              const SizedBox(width: 6),
+                              Text(
+                                '${_liked ? event.likes + 1 : event.likes}',
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  color: _liked
+                                      ? const Color(0xFFE91E63)
+                                      : Colors.grey,
+                                ),
+                              ),
                             ],
                           ),
                         ),
-                      ],
+                      ),
+                      const SizedBox(width: 10),
+                      _buildActionIcon(Icons.camera_alt_outlined),
+                      const SizedBox(width: 10),
+                      _buildActionIcon(Icons.share_outlined),
+                      const SizedBox(width: 10),
+                      _buildActionIcon(Icons.file_upload_outlined),
+                    ],
+                  ),
+                  const SizedBox(height: 28),
+
+                  // Ingressos section
+                  const Text(
+                    'Ingressos',
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.black87,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+
+                  // Lote selector
+                  ...List.generate(event.lotes.length, (index) {
+                    final isSelected = _selectedLote == index;
+                    final lotePrice = event.lotesPrices[index];
+                    final loteTax = lotePrice * event.taxRate;
+
+                    return GestureDetector(
+                      onTap: () => setState(() => _selectedLote = index),
+                      child: Container(
+                        margin: const EdgeInsets.only(bottom: 12),
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: isSelected
+                              ? const Color(0xFFFCE4EC)
+                              : Colors.grey.shade50,
+                          borderRadius: BorderRadius.circular(14),
+                          border: Border.all(
+                            color: isSelected
+                                ? const Color(0xFFE91E63)
+                                : Colors.grey.shade200,
+                            width: isSelected ? 2 : 1,
+                          ),
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  event.lotes[index],
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    color: isSelected
+                                        ? const Color(0xFFE91E63)
+                                        : Colors.black87,
+                                  ),
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  'R\$ ${lotePrice.toStringAsFixed(2).replaceAll('.', ',')}',
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 16,
+                                    color: isSelected
+                                        ? const Color(0xFFE91E63)
+                                        : Colors.black87,
+                                  ),
+                                ),
+                                const SizedBox(height: 2),
+                                Text(
+                                  '+ taxas a partir de R\$ ${loteTax.toStringAsFixed(2).replaceAll('.', ',')}',
+                                  style: TextStyle(
+                                      fontSize: 11, color: Colors.grey.shade500),
+                                ),
+                              ],
+                            ),
+                            if (isSelected)
+                              // Quantity selector
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 8, vertical: 4),
+                                decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  borderRadius: BorderRadius.circular(20),
+                                  border:
+                                      Border.all(color: Colors.grey.shade300),
+                                ),
+                                child: Row(
+                                  children: [
+                                    GestureDetector(
+                                      onTap: () {
+                                        if (_quantity > 0) {
+                                          setState(() => _quantity--);
+                                        }
+                                      },
+                                      child: const Icon(Icons.remove,
+                                          size: 18, color: Colors.grey),
+                                    ),
+                                    Padding(
+                                      padding: const EdgeInsets.symmetric(
+                                          horizontal: 14),
+                                      child: Text(
+                                        '$_quantity',
+                                        style: const TextStyle(
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 16,
+                                        ),
+                                      ),
+                                    ),
+                                    GestureDetector(
+                                      onTap: () =>
+                                          setState(() => _quantity++),
+                                      child: const Icon(Icons.add,
+                                          size: 18,
+                                          color: Color(0xFFE91E63)),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                          ],
+                        ),
+                      ),
+                    );
+                  }),
+                  const SizedBox(height: 16),
+
+                  // Buy button
+                  SizedBox(
+                    width: double.infinity,
+                    height: 50,
+                    child: ElevatedButton(
+                      onPressed: _quantity > 0
+                          ? () {
+                              Navigator.pushNamed(context, '/checkout',
+                                  arguments: {
+                                    'event': event,
+                                    'quantity': _quantity,
+                                    'loteIndex': _selectedLote,
+                                  });
+                            }
+                          : null,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFFE91E63),
+                        foregroundColor: Colors.white,
+                        disabledBackgroundColor: Colors.grey.shade300,
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(14)),
+                        elevation: 0,
+                      ),
+                      child: Text(
+                        _quantity > 0
+                            ? 'Comprar $_quantity ingresso${_quantity > 1 ? 's' : ''}'
+                            : 'Selecione a quantidade',
+                        style: const TextStyle(
+                            fontWeight: FontWeight.bold, fontSize: 16),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 28),
+
+                  // Description
+                  Row(
+                    children: [
+                      const Icon(Icons.description_outlined,
+                          size: 18, color: Colors.black87),
+                      const SizedBox(width: 8),
+                      const Text(
+                        'Descrição do Evento',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.black87,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 10),
+                  Text(
+                    event.description,
+                    maxLines: _showFullDescription ? null : 4,
+                    overflow: _showFullDescription
+                        ? TextOverflow.visible
+                        : TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      color: Colors.grey,
+                      height: 1.5,
+                      fontSize: 14,
+                    ),
+                  ),
+                  GestureDetector(
+                    onTap: () => setState(
+                        () => _showFullDescription = !_showFullDescription),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 8),
+                      child: Text(
+                        _showFullDescription ? 'Ler menos' : 'Ler mais',
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: Colors.black87,
+                          decoration: TextDecoration.underline,
+                        ),
+                      ),
                     ),
                   ),
                   const SizedBox(height: 24),
-                  
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton(
-                      onPressed: () {
-                        Navigator.pushNamed(context, '/checkout');
-                      },
-                      child: const Text('Continuar para Compra', style: TextStyle(fontWeight: FontWeight.bold)),
+
+                  // Image pages indicator (matching mockup)
+                  Center(
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 8),
+                      decoration: BoxDecoration(
+                        color: Colors.grey.shade100,
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.chevron_left,
+                              color: Colors.grey.shade400, size: 20),
+                          const SizedBox(width: 8),
+                          const Text(
+                            '1 / 4',
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              color: Colors.black54,
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          const Icon(Icons.chevron_right,
+                              color: Colors.black54, size: 20),
+                        ],
+                      ),
                     ),
                   ),
-                  const SizedBox(height: 32),
-                  
-                  const Text('Descrição do Evento', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                  const SizedBox(height: 8),
-                  const Text(
-                    'Lorem Ipsum is simply dummy text of the printing and typesetting industry. '
-                    'Lorem Ipsum has been the industry\'s standard dummy text ever since the 1500s...\n\n'
-                    'When an unknown printer took a galley of type and scrambled it to make a type specimen book.',
-                    style: TextStyle(color: Colors.grey, height: 1.5),
-                  ),
-                  const Text('Ler mais', style: TextStyle(fontWeight: FontWeight.bold, decoration: TextDecoration.underline)),
+                  const SizedBox(height: 24),
                 ],
               ),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
+    );
+  }
+
+  Widget _buildActionIcon(IconData icon) {
+    return Container(
+      padding: const EdgeInsets.all(10),
+      decoration: BoxDecoration(
+        color: Colors.grey.shade100,
+        shape: BoxShape.circle,
+      ),
+      child: Icon(icon, color: Colors.grey, size: 20),
     );
   }
 }
