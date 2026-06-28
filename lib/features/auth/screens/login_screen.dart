@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+
+import '../../../shared/app_scope.dart';
 import '../../../shared/widgets/festpass_logo.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -9,222 +11,177 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
-  bool _obscurePassword = true;
+  final _formKey = GlobalKey<FormState>();
+  final _name = TextEditingController();
+  final _email = TextEditingController();
+  final _password = TextEditingController();
+  bool _register = false;
+  bool _obscure = true;
+
+  @override
+  void dispose() {
+    _name.dispose();
+    _email.dispose();
+    _password.dispose();
+    super.dispose();
+  }
+
+  Future<void> _submit() async {
+    if (!_formKey.currentState!.validate()) return;
+    final auth = AppScope.of(context).auth;
+    final success = _register
+        ? await auth.register(_name.text, _email.text, _password.text)
+        : await auth.login(_email.text, _password.text);
+    if (!mounted || success) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(auth.error ?? 'Não foi possível continuar.')),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
+    final auth = AppScope.of(context).auth;
     return Scaffold(
-      backgroundColor: Colors.white,
       body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 28.0, vertical: 40.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              const SizedBox(height: 16),
-              // Logo
-              const FestPassLogoWithSubtitle(size: 1.2),
-              const SizedBox(height: 48),
-
-              // Title
-              const Text(
-                'Entrar no Fest Pass',
-                style: TextStyle(
-                  fontSize: 22,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.black87,
-                ),
-              ),
-              const SizedBox(height: 32),
-
-              // Email field
-              TextFormField(
-                decoration: InputDecoration(
-                  hintText: 'Seu e-mail',
-                  hintStyle: TextStyle(color: Colors.grey.shade400),
-                  prefixIcon: Icon(Icons.email_outlined, color: Colors.grey.shade400),
-                  filled: true,
-                  fillColor: Colors.grey.shade50,
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(color: Colors.grey.shade300),
-                  ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(color: Colors.grey.shade300),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(color: Color(0xFFE91E63), width: 2),
-                  ),
-                ),
-                keyboardType: TextInputType.emailAddress,
-              ),
-              const SizedBox(height: 16),
-
-              // Password field
-              TextFormField(
-                obscureText: _obscurePassword,
-                decoration: InputDecoration(
-                  hintText: 'Sua senha',
-                  hintStyle: TextStyle(color: Colors.grey.shade400),
-                  prefixIcon: Icon(Icons.lock_outline, color: Colors.grey.shade400),
-                  suffixIcon: IconButton(
-                    icon: Icon(
-                      _obscurePassword ? Icons.visibility_off_outlined : Icons.visibility_outlined,
-                      color: Colors.grey.shade400,
-                    ),
-                    onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
-                  ),
-                  filled: true,
-                  fillColor: Colors.grey.shade50,
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(color: Colors.grey.shade300),
-                  ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(color: Colors.grey.shade300),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(color: Color(0xFFE91E63), width: 2),
-                  ),
-                ),
-              ),
-
-              // Forgot password
-              Align(
-                alignment: Alignment.centerRight,
-                child: TextButton(
-                  onPressed: () {},
-                  child: const Text(
-                    'Esqueceu sua senha?',
-                    style: TextStyle(
-                      color: Color(0xFF1E88E5),
-                      fontWeight: FontWeight.w500,
-                      fontSize: 13,
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 8),
-
-              // Login Button
-              SizedBox(
-                width: double.infinity,
-                height: 50,
-                child: ElevatedButton(
-                  onPressed: () {
-                    Navigator.pushReplacementNamed(context, '/main');
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF9C27B0),
-                    foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    elevation: 0,
-                  ),
-                  child: const Text(
-                    'Entrar',
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 16,
-                    ),
-                  ),
-                ),
-              ),
-
-              const SizedBox(height: 32),
-
-              // Divider "ou entre com"
-              Row(
+        child: Center(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(24),
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 440),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  Expanded(child: Divider(color: Colors.grey.shade300)),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    child: Text(
-                      'ou entre com',
-                      style: TextStyle(color: Colors.grey.shade500, fontSize: 13),
-                    ),
+                  const Align(
+                    alignment: Alignment.centerLeft,
+                    child: FestPassLogoWithSubtitle(size: 1.08),
                   ),
-                  Expanded(child: Divider(color: Colors.grey.shade300)),
-                ],
-              ),
-              const SizedBox(height: 24),
-
-              // Google button
-              Container(
-                width: 64,
-                height: 64,
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: Colors.grey.shade200),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.04),
-                      blurRadius: 8,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
-                ),
-                child: InkWell(
-                  onTap: () {},
-                  borderRadius: BorderRadius.circular(16),
-                  child: Center(
-                    child: Text(
-                      'G',
-                      style: TextStyle(
-                        fontSize: 28,
-                        fontWeight: FontWeight.bold,
-                        foreground: Paint()
-                          ..shader = const LinearGradient(
-                            colors: [
-                              Color(0xFF4285F4),
-                              Color(0xFFDB4437),
-                              Color(0xFFF4B400),
-                              Color(0xFF0F9D58),
-                            ],
-                          ).createShader(const Rect.fromLTWH(0, 0, 30, 30)),
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                'Google',
-                style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
-              ),
-              const SizedBox(height: 40),
-
-              // Register
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
+                  const SizedBox(height: 42),
                   Text(
-                    'Não tem uma conta? ',
-                    style: TextStyle(color: Colors.grey.shade600, fontSize: 14),
+                    _register
+                        ? 'Crie seu passaporte.'
+                        : 'Sua próxima história começa aqui.',
+                    style: Theme.of(context)
+                        .textTheme
+                        .headlineMedium
+                        ?.copyWith(fontSize: 32),
                   ),
-                  GestureDetector(
-                    onTap: () {},
-                    child: const Text(
-                      'Cadastre-se aqui',
-                      style: TextStyle(
-                        color: Color(0xFF1E88E5),
-                        fontWeight: FontWeight.bold,
-                        fontSize: 14,
-                      ),
+                  const SizedBox(height: 10),
+                  Text(
+                    _register
+                        ? 'A conta guarda seus favoritos, endereço e ingressos somente para você.'
+                        : 'Entre para descobrir eventos e manter seus ingressos sempre à mão.',
+                    style: Theme.of(context)
+                        .textTheme
+                        .bodyLarge
+                        ?.copyWith(height: 1.45),
+                  ),
+                  const SizedBox(height: 30),
+                  Form(
+                    key: _formKey,
+                    child: Column(
+                      children: [
+                        if (_register) ...[
+                          TextFormField(
+                            controller: _name,
+                            textCapitalization: TextCapitalization.words,
+                            decoration: const InputDecoration(
+                                labelText: 'Nome',
+                                prefixIcon: Icon(Icons.person_outline)),
+                            validator: (value) =>
+                                (value?.trim().length ?? 0) < 3
+                                    ? 'Informe seu nome.'
+                                    : null,
+                          ),
+                          const SizedBox(height: 12),
+                        ],
+                        TextFormField(
+                          controller: _email,
+                          keyboardType: TextInputType.emailAddress,
+                          autocorrect: false,
+                          decoration: const InputDecoration(
+                              labelText: 'E-mail',
+                              prefixIcon: Icon(Icons.alternate_email)),
+                          validator: (value) => !(value?.contains('@') ?? false)
+                              ? 'Informe um e-mail válido.'
+                              : null,
+                        ),
+                        const SizedBox(height: 12),
+                        TextFormField(
+                          controller: _password,
+                          obscureText: _obscure,
+                          decoration: InputDecoration(
+                            labelText: 'Senha',
+                            prefixIcon: const Icon(Icons.lock_outline),
+                            suffixIcon: IconButton(
+                              onPressed: () =>
+                                  setState(() => _obscure = !_obscure),
+                              icon: Icon(_obscure
+                                  ? Icons.visibility_outlined
+                                  : Icons.visibility_off_outlined),
+                            ),
+                          ),
+                          validator: (value) => (value?.length ?? 0) < 6
+                              ? 'Use pelo menos 6 caracteres.'
+                              : null,
+                          onFieldSubmitted: (_) => _submit(),
+                        ),
+                      ],
                     ),
                   ),
+                  const SizedBox(height: 20),
+                  ListenableBuilder(
+                    listenable: auth,
+                    builder: (context, _) => ElevatedButton(
+                      onPressed: auth.busy ? null : _submit,
+                      child: auth.busy
+                          ? const SizedBox(
+                              width: 22,
+                              height: 22,
+                              child: CircularProgressIndicator(
+                                  strokeWidth: 2, color: Colors.white))
+                          : Text(_register ? 'Criar conta' : 'Entrar'),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  TextButton(
+                    onPressed: () => setState(() {
+                      _register = !_register;
+                      _formKey.currentState?.reset();
+                    }),
+                    child: Text(_register
+                        ? 'Já tenho conta'
+                        : 'Primeira vez? Criar uma conta'),
+                  ),
+                  const SizedBox(height: 28),
+                  const _SecurityNote(),
                 ],
               ),
-            ],
+            ),
           ),
         ),
       ),
     );
   }
+}
+
+class _SecurityNote extends StatelessWidget {
+  const _SecurityNote();
+  @override
+  Widget build(BuildContext context) => Container(
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: const Color(0xFFF2ECF7),
+          borderRadius: BorderRadius.circular(14),
+        ),
+        child: const Row(
+          children: [
+            Icon(Icons.shield_outlined, size: 20, color: Color(0xFF7B2CBF)),
+            SizedBox(width: 10),
+            Expanded(
+                child: Text(
+                    'Login protegido pelo Firebase Authentication. Sua senha não é armazenada pelo aplicativo.',
+                    style: TextStyle(fontSize: 12, height: 1.35))),
+          ],
+        ),
+      );
 }

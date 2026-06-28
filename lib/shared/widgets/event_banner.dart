@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'dart:math' as math;
 
 /// Builds the colorful TTT-style event banner matching the mockup design
 class EventBanner extends StatelessWidget {
@@ -55,7 +54,7 @@ class EventBanner extends StatelessWidget {
               color: Colors.white,
               shadows: [
                 Shadow(
-                  color: colors[2].withOpacity(0.5),
+                  color: colors[2].withValues(alpha: 0.5),
                   offset: const Offset(3, 3),
                   blurRadius: 6,
                 ),
@@ -141,7 +140,7 @@ class _ZigZagPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final paint = Paint()
-      ..color = baseColor.withOpacity(0.25)
+      ..color = baseColor.withValues(alpha: 0.25)
       ..style = PaintingStyle.stroke
       ..strokeWidth = 30;
 

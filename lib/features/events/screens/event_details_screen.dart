@@ -1,403 +1,207 @@
 import 'package:flutter/material.dart';
-import '../../../core/data/mock_events.dart';
+
+import '../../../core/models/event.dart';
+import '../../../shared/app_scope.dart';
 import '../../../shared/widgets/event_banner.dart';
 
 class EventDetailsScreen extends StatefulWidget {
   const EventDetailsScreen({super.key});
-
   @override
   State<EventDetailsScreen> createState() => _EventDetailsScreenState();
 }
 
 class _EventDetailsScreenState extends State<EventDetailsScreen> {
-  int _quantity = 0;
-  int _selectedLote = 0;
-  bool _liked = false;
-  bool _showFullDescription = false;
+  int _lotIndex = 0;
+  int _quantity = 1;
 
   @override
   Widget build(BuildContext context) {
-    final event =
-        ModalRoute.of(context)?.settings.arguments as EventData? ?? mockEvents[0];
-
-    final selectedPrice = event.lotesPrices[_selectedLote];
-    final taxAmount = selectedPrice * event.taxRate;
-
+    final event = ModalRoute.of(context)!.settings.arguments as EventData;
+    final eventsBloc = AppScope.of(context).events;
+    final amount = event.lotesPrices[_lotIndex] * _quantity;
     return Scaffold(
-      backgroundColor: Colors.white,
       body: CustomScrollView(
         slivers: [
-          // Custom app bar with event banner
           SliverAppBar(
-            expandedHeight: 280,
+            expandedHeight: 320,
             pinned: true,
-            backgroundColor: Colors.white,
-            leading: GestureDetector(
-              onTap: () => Navigator.pop(context),
-              child: Container(
-                margin: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: Colors.black.withOpacity(0.3),
-                  shape: BoxShape.circle,
+            backgroundColor: const Color(0xFF17131F),
+            foregroundColor: Colors.white,
+            actions: [
+              ListenableBuilder(
+                listenable: eventsBloc,
+                builder: (_, __) => IconButton.filledTonal(
+                  onPressed: () => eventsBloc.toggleFavorite(event.id),
+                  icon: Icon(eventsBloc.favoriteIds.contains(event.id)
+                      ? Icons.favorite
+                      : Icons.favorite_border),
                 ),
-                child: const Icon(Icons.arrow_back, color: Colors.white),
               ),
-            ),
+              const SizedBox(width: 8),
+            ],
             flexibleSpace: FlexibleSpaceBar(
-              background: EventBanner(
-                colorIndex: event.colorIndex,
-                height: 280,
-              ),
+              background:
+                  EventBanner(colorIndex: event.colorIndex, height: 320),
             ),
           ),
-
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.all(20.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Event name
-                  Text(
-                    event.name,
-                    style: const TextStyle(
-                      fontSize: 22,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.black87,
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-
-                  // Date
-                  Row(
-                    children: [
-                      const Icon(Icons.calendar_today,
-                          color: Colors.grey, size: 16),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          event.dateDetail,
-                          style: const TextStyle(
-                              color: Colors.grey, fontSize: 14),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-
-                  // Location
-                  Row(
-                    children: [
-                      const Icon(Icons.location_on,
-                          color: Colors.grey, size: 16),
-                      const SizedBox(width: 8),
-                      Text(
-                        event.location,
-                        style: const TextStyle(
-                          color: Color(0xFF1E88E5),
-                          fontSize: 14,
-                          decoration: TextDecoration.underline,
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 20),
-
-                  // Action icons row (like, instagram, share)
-                  Row(
-                    children: [
-                      // Like button
-                      GestureDetector(
-                        onTap: () => setState(() => _liked = !_liked),
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 14, vertical: 8),
-                          decoration: BoxDecoration(
-                            color: _liked
-                                ? const Color(0xFFE91E63).withOpacity(0.1)
-                                : Colors.grey.shade100,
-                            borderRadius: BorderRadius.circular(20),
-                          ),
-                          child: Row(
-                            children: [
-                              Icon(
-                                _liked
-                                    ? Icons.favorite
-                                    : Icons.favorite_border,
-                                color: _liked
-                                    ? const Color(0xFFE91E63)
-                                    : Colors.grey,
-                                size: 20,
-                              ),
-                              const SizedBox(width: 6),
-                              Text(
-                                '${_liked ? event.likes + 1 : event.likes}',
-                                style: TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  color: _liked
-                                      ? const Color(0xFFE91E63)
-                                      : Colors.grey,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 10),
-                      _buildActionIcon(Icons.camera_alt_outlined),
-                      const SizedBox(width: 10),
-                      _buildActionIcon(Icons.share_outlined),
-                      const SizedBox(width: 10),
-                      _buildActionIcon(Icons.file_upload_outlined),
-                    ],
-                  ),
-                  const SizedBox(height: 28),
-
-                  // Ingressos section
-                  const Text(
-                    'Ingressos',
+          SliverPadding(
+            padding: const EdgeInsets.fromLTRB(22, 24, 22, 130),
+            sliver: SliverList(
+              delegate: SliverChildListDelegate([
+                Text(event.category.toUpperCase(),
                     style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.black87,
-                    ),
+                        color: Theme.of(context).colorScheme.primary,
+                        fontWeight: FontWeight.w900,
+                        letterSpacing: 1.1,
+                        fontSize: 11)),
+                const SizedBox(height: 7),
+                Text(event.name,
+                    style: Theme.of(context).textTheme.headlineMedium),
+                const SizedBox(height: 20),
+                _InfoTile(
+                    icon: Icons.calendar_month_outlined,
+                    title: 'Quando',
+                    value: event.dateDetail),
+                _InfoTile(
+                    icon: Icons.location_on_outlined,
+                    title: 'Onde',
+                    value: event.location),
+                _InfoTile(
+                    icon: Icons.favorite_outline,
+                    title: 'Comunidade',
+                    value: '${event.likes} pessoas salvaram este evento'),
+                const SizedBox(height: 18),
+                Text('Sobre o evento',
+                    style: Theme.of(context).textTheme.titleLarge),
+                const SizedBox(height: 10),
+                Text(event.description,
+                    style: Theme.of(context)
+                        .textTheme
+                        .bodyLarge
+                        ?.copyWith(height: 1.55)),
+                const SizedBox(height: 28),
+                Text('Escolha seu ingresso',
+                    style: Theme.of(context).textTheme.titleLarge),
+                const SizedBox(height: 12),
+                RadioGroup<int>(
+                  groupValue: _lotIndex,
+                  onChanged: (value) => setState(() => _lotIndex = value!),
+                  child: Column(
+                    children: List.generate(
+                        event.lotes.length,
+                        (index) => RadioListTile<int>(
+                              value: index,
+                              contentPadding:
+                                  const EdgeInsets.symmetric(horizontal: 12),
+                              shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(14),
+                                  side: BorderSide(
+                                      color: index == _lotIndex
+                                          ? Theme.of(context)
+                                              .colorScheme
+                                              .primary
+                                          : const Color(0xFFE9E1E6))),
+                              title: Text(event.lotes[index],
+                                  style: const TextStyle(
+                                      fontWeight: FontWeight.w700)),
+                              secondary: Text(
+                                  'R\$ ${event.lotesPrices[index].toStringAsFixed(2).replaceAll('.', ',')}',
+                                  style: const TextStyle(
+                                      fontWeight: FontWeight.w900)),
+                            )),
                   ),
-                  const SizedBox(height: 16),
-
-                  // Lote selector
-                  ...List.generate(event.lotes.length, (index) {
-                    final isSelected = _selectedLote == index;
-                    final lotePrice = event.lotesPrices[index];
-                    final loteTax = lotePrice * event.taxRate;
-
-                    return GestureDetector(
-                      onTap: () => setState(() => _selectedLote = index),
-                      child: Container(
-                        margin: const EdgeInsets.only(bottom: 12),
-                        padding: const EdgeInsets.all(16),
-                        decoration: BoxDecoration(
-                          color: isSelected
-                              ? const Color(0xFFFCE4EC)
-                              : Colors.grey.shade50,
-                          borderRadius: BorderRadius.circular(14),
-                          border: Border.all(
-                            color: isSelected
-                                ? const Color(0xFFE91E63)
-                                : Colors.grey.shade200,
-                            width: isSelected ? 2 : 1,
-                          ),
-                        ),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  event.lotes[index],
-                                  style: TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    color: isSelected
-                                        ? const Color(0xFFE91E63)
-                                        : Colors.black87,
-                                  ),
-                                ),
-                                const SizedBox(height: 4),
-                                Text(
-                                  'R\$ ${lotePrice.toStringAsFixed(2).replaceAll('.', ',')}',
-                                  style: TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 16,
-                                    color: isSelected
-                                        ? const Color(0xFFE91E63)
-                                        : Colors.black87,
-                                  ),
-                                ),
-                                const SizedBox(height: 2),
-                                Text(
-                                  '+ taxas a partir de R\$ ${loteTax.toStringAsFixed(2).replaceAll('.', ',')}',
-                                  style: TextStyle(
-                                      fontSize: 11, color: Colors.grey.shade500),
-                                ),
-                              ],
-                            ),
-                            if (isSelected)
-                              // Quantity selector
-                              Container(
-                                padding: const EdgeInsets.symmetric(
-                                    horizontal: 8, vertical: 4),
-                                decoration: BoxDecoration(
-                                  color: Colors.white,
-                                  borderRadius: BorderRadius.circular(20),
-                                  border:
-                                      Border.all(color: Colors.grey.shade300),
-                                ),
-                                child: Row(
-                                  children: [
-                                    GestureDetector(
-                                      onTap: () {
-                                        if (_quantity > 0) {
-                                          setState(() => _quantity--);
-                                        }
-                                      },
-                                      child: const Icon(Icons.remove,
-                                          size: 18, color: Colors.grey),
-                                    ),
-                                    Padding(
-                                      padding: const EdgeInsets.symmetric(
-                                          horizontal: 14),
-                                      child: Text(
-                                        '$_quantity',
-                                        style: const TextStyle(
-                                          fontWeight: FontWeight.bold,
-                                          fontSize: 16,
-                                        ),
-                                      ),
-                                    ),
-                                    GestureDetector(
-                                      onTap: () =>
-                                          setState(() => _quantity++),
-                                      child: const Icon(Icons.add,
-                                          size: 18,
-                                          color: Color(0xFFE91E63)),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                          ],
-                        ),
-                      ),
-                    );
-                  }),
-                  const SizedBox(height: 16),
-
-                  // Buy button
-                  SizedBox(
-                    width: double.infinity,
-                    height: 50,
-                    child: ElevatedButton(
-                      onPressed: _quantity > 0
-                          ? () {
-                              Navigator.pushNamed(context, '/checkout',
-                                  arguments: {
-                                    'event': event,
-                                    'quantity': _quantity,
-                                    'loteIndex': _selectedLote,
-                                  });
-                            }
-                          : null,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFFE91E63),
-                        foregroundColor: Colors.white,
-                        disabledBackgroundColor: Colors.grey.shade300,
-                        shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(14)),
-                        elevation: 0,
-                      ),
-                      child: Text(
-                        _quantity > 0
-                            ? 'Comprar $_quantity ingresso${_quantity > 1 ? 's' : ''}'
-                            : 'Selecione a quantidade',
-                        style: const TextStyle(
-                            fontWeight: FontWeight.bold, fontSize: 16),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 28),
-
-                  // Description
-                  Row(
-                    children: [
-                      const Icon(Icons.description_outlined,
-                          size: 18, color: Colors.black87),
-                      const SizedBox(width: 8),
-                      const Text(
-                        'Descrição do Evento',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.black87,
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 10),
-                  Text(
-                    event.description,
-                    maxLines: _showFullDescription ? null : 4,
-                    overflow: _showFullDescription
-                        ? TextOverflow.visible
-                        : TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      color: Colors.grey,
-                      height: 1.5,
-                      fontSize: 14,
-                    ),
-                  ),
-                  GestureDetector(
-                    onTap: () => setState(
-                        () => _showFullDescription = !_showFullDescription),
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 8),
-                      child: Text(
-                        _showFullDescription ? 'Ler menos' : 'Ler mais',
-                        style: const TextStyle(
-                          fontWeight: FontWeight.bold,
-                          color: Colors.black87,
-                          decoration: TextDecoration.underline,
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 24),
-
-                  // Image pages indicator (matching mockup)
-                  Center(
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 16, vertical: 8),
-                      decoration: BoxDecoration(
-                        color: Colors.grey.shade100,
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(Icons.chevron_left,
-                              color: Colors.grey.shade400, size: 20),
-                          const SizedBox(width: 8),
-                          const Text(
-                            '1 / 4',
-                            style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              color: Colors.black54,
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          const Icon(Icons.chevron_right,
-                              color: Colors.black54, size: 20),
-                        ],
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 24),
-                ],
-              ),
+                ),
+                const SizedBox(height: 18),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text('Quantidade',
+                        style: TextStyle(fontWeight: FontWeight.w800)),
+                    Row(children: [
+                      IconButton.outlined(
+                          onPressed: _quantity > 1
+                              ? () => setState(() => _quantity--)
+                              : null,
+                          icon: const Icon(Icons.remove)),
+                      SizedBox(
+                          width: 40,
+                          child: Text('$_quantity',
+                              textAlign: TextAlign.center,
+                              style: Theme.of(context).textTheme.titleMedium)),
+                      IconButton.outlined(
+                          onPressed: _quantity < 5
+                              ? () => setState(() => _quantity++)
+                              : null,
+                          icon: const Icon(Icons.add)),
+                    ]),
+                  ],
+                ),
+              ]),
             ),
           ),
         ],
       ),
-    );
-  }
-
-  Widget _buildActionIcon(IconData icon) {
-    return Container(
-      padding: const EdgeInsets.all(10),
-      decoration: BoxDecoration(
-        color: Colors.grey.shade100,
-        shape: BoxShape.circle,
+      bottomSheet: SafeArea(
+        child: Container(
+          padding: const EdgeInsets.fromLTRB(20, 14, 20, 14),
+          decoration: const BoxDecoration(color: Colors.white, boxShadow: [
+            BoxShadow(
+                color: Color(0x18000000), blurRadius: 20, offset: Offset(0, -4))
+          ]),
+          child: Row(children: [
+            Expanded(
+                child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                  const Text('Subtotal', style: TextStyle(fontSize: 11)),
+                  Text('R\$ ${amount.toStringAsFixed(2).replaceAll('.', ',')}',
+                      style: Theme.of(context).textTheme.titleLarge)
+                ])),
+            Expanded(
+              child: ElevatedButton(
+                onPressed: () => Navigator.pushNamed(context, '/checkout',
+                    arguments: {
+                      'event': event,
+                      'quantity': _quantity,
+                      'loteIndex': _lotIndex
+                    }),
+                child: const Text('Continuar'),
+              ),
+            ),
+          ]),
+        ),
       ),
-      child: Icon(icon, color: Colors.grey, size: 20),
     );
   }
+}
+
+class _InfoTile extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final String value;
+  const _InfoTile(
+      {required this.icon, required this.title, required this.value});
+  @override
+  Widget build(BuildContext context) => Padding(
+        padding: const EdgeInsets.only(bottom: 13),
+        child: Row(children: [
+          Container(
+              width: 44,
+              height: 44,
+              decoration: BoxDecoration(
+                  color: const Color(0xFFF7EEF3),
+                  borderRadius: BorderRadius.circular(13)),
+              child: Icon(icon, color: Theme.of(context).colorScheme.primary)),
+          const SizedBox(width: 12),
+          Expanded(
+              child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                Text(title, style: Theme.of(context).textTheme.bodySmall),
+                const SizedBox(height: 2),
+                Text(value, style: const TextStyle(fontWeight: FontWeight.w700))
+              ])),
+        ]),
+      );
 }

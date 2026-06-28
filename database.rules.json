@@ -1,0 +1,18 @@
+{
+  "rules": {
+    ".read": false,
+    ".write": false,
+    "events": {
+      ".read": "auth != null",
+      "$eventId": {
+        ".write": "auth != null && !data.exists() && newData.child('seeded').val() == true && ($eventId == 'ttt-unicamp-2026' || $eventId == 'baile-helipa-2026' || $eventId == 'sunset-vibes-2026' || $eventId == 'festa-neon-2026' || $eventId == 'calourada-usp-2026' || $eventId == 'rave-subterranea-2026')"
+      }
+    },
+    "users": {
+      "$uid": {
+        ".read": "auth != null && auth.uid == $uid",
+        ".write": "auth != null && auth.uid == $uid"
+      }
+    }
+  }
+}

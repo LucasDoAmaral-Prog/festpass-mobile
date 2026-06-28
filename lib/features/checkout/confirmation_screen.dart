@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import '../../core/data/mock_events.dart';
+
+import '../../core/models/ticket.dart';
 import '../../shared/widgets/festpass_logo.dart';
-import '../../shared/widgets/event_banner.dart';
 
 class ConfirmationScreen extends StatelessWidget {
   const ConfirmationScreen({super.key});
@@ -9,273 +9,97 @@ class ConfirmationScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final args =
-        ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
-    final event = args?['event'] as EventData? ?? mockEvents[0];
-    final quantity = args?['quantity'] as int? ?? 1;
-    final loteIndex = args?['loteIndex'] as int? ?? 0;
-    final total = args?['total'] as double? ?? 82.50;
-
-    final ticketNumber = 435232 + event.colorIndex * 1000;
-
+        ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>;
+    final ticket = args['ticket'] as TicketData;
     return Scaffold(
-      backgroundColor: Colors.white,
       body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
-          child: Column(
-            children: [
-              // Logo
-              const FestPassLogoWithSubtitle(),
-              const SizedBox(height: 40),
-
-              // Success message
-              const Text(
-                'Compra concluída!',
-                style: TextStyle(
-                  fontSize: 26,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.black87,
-                ),
-              ),
-              const SizedBox(height: 24),
-
-              // Check icon
-              Container(
-                width: 80,
-                height: 80,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  border: Border.all(
-                    color: const Color(0xFF42A5F5),
-                    width: 2,
+        child: Center(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(24),
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 480),
+              child: Column(
+                children: [
+                  const FestPassLogoWithSubtitle(),
+                  const SizedBox(height: 36),
+                  Container(
+                    width: 88,
+                    height: 88,
+                    decoration: const BoxDecoration(
+                        color: Color(0xFFE7F8EE), shape: BoxShape.circle),
+                    child: const Icon(Icons.check_rounded,
+                        size: 48, color: Color(0xFF198754)),
                   ),
-                ),
-                child: const Icon(
-                  Icons.check,
-                  size: 40,
-                  color: Color(0xFF42A5F5),
-                ),
-              ),
-              const SizedBox(height: 24),
-
-              // Thank you message
-              const Text(
-                'Obrigado pela preferência!',
-                style: TextStyle(
-                  fontSize: 16,
-                  color: Colors.black54,
-                ),
-              ),
-              const Text(
-                'Tenha um bom evento.',
-                style: TextStyle(
-                  fontSize: 16,
-                  color: Colors.black54,
-                ),
-              ),
-              const SizedBox(height: 32),
-
-              // Order details
-              const Text(
-                'Detalhes do pedido',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.black87,
-                ),
-              ),
-              const SizedBox(height: 16),
-
-              // Event card
-              Container(
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(16),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.08),
-                      blurRadius: 12,
-                      offset: const Offset(0, 4),
-                    ),
-                  ],
-                ),
-                child: Column(
-                  children: [
-                    EventBanner(
-                      colorIndex: event.colorIndex,
-                      height: 150,
-                      borderRadius: const BorderRadius.vertical(
-                          top: Radius.circular(16)),
-                    ),
-                    Padding(
-                      padding: const EdgeInsets.all(16),
-                      child: Column(
+                  const SizedBox(height: 22),
+                  Text('Ingresso garantido!',
+                      style: Theme.of(context).textTheme.headlineMedium,
+                      textAlign: TextAlign.center),
+                  const SizedBox(height: 8),
+                  Text(
+                      'A compra foi gravada no Firebase Realtime Database e já aparece na sua área privada.',
+                      textAlign: TextAlign.center,
+                      style: Theme.of(context)
+                          .textTheme
+                          .bodyLarge
+                          ?.copyWith(height: 1.45)),
+                  const SizedBox(height: 28),
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(20),
+                    decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(color: const Color(0xFFEDE5EA))),
+                    child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(
-                            event.name,
-                            style: const TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 16,
-                              color: Colors.black87,
-                            ),
-                          ),
-                          const SizedBox(height: 12),
-                          Row(
-                            mainAxisAlignment:
-                                MainAxisAlignment.spaceBetween,
-                            children: [
-                              Column(
-                                crossAxisAlignment:
-                                    CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    'Lote',
-                                    style: TextStyle(
-                                      fontSize: 12,
-                                      color: Colors.grey.shade500,
-                                    ),
-                                  ),
-                                  Text(
-                                    event.lotes[loteIndex],
-                                    style: const TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 14,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              Column(
-                                crossAxisAlignment: CrossAxisAlignment.end,
-                                children: [
-                                  Text(
-                                    'Número do Ingresso',
-                                    style: TextStyle(
-                                      fontSize: 12,
-                                      color: Colors.grey.shade500,
-                                    ),
-                                  ),
-                                  Text(
-                                    '$ticketNumber',
-                                    style: const TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 14,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 12),
-                          Row(
-                            mainAxisAlignment:
-                                MainAxisAlignment.spaceBetween,
-                            children: [
-                              Column(
-                                crossAxisAlignment:
-                                    CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    'Quantidade',
-                                    style: TextStyle(
-                                      fontSize: 12,
-                                      color: Colors.grey.shade500,
-                                    ),
-                                  ),
-                                  Text(
-                                    '$quantity',
-                                    style: const TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 14,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              Column(
-                                crossAxisAlignment: CrossAxisAlignment.end,
-                                children: [
-                                  Text(
-                                    'Total pago',
-                                    style: TextStyle(
-                                      fontSize: 12,
-                                      color: Colors.grey.shade500,
-                                    ),
-                                  ),
-                                  Text(
-                                    'R\$ ${total.toStringAsFixed(2).replaceAll('.', ',')}',
-                                    style: const TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 14,
-                                      color: Color(0xFFE91E63),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
+                          Text(ticket.eventName,
+                              style: Theme.of(context).textTheme.titleLarge),
+                          const SizedBox(height: 14),
+                          _line('Pedido', '#FP${ticket.displayId}'),
+                          _line(
+                              'Ingresso', '${ticket.quantity} × ${ticket.lot}'),
+                          _line(
+                              'Pagamento',
+                              ticket.paymentMethod == 'pix'
+                                  ? 'Pix'
+                                  : 'Cartão de crédito'),
+                          _line('Total',
+                              'R\$ ${ticket.total.toStringAsFixed(2).replaceAll('.', ',')}'),
+                        ]),
+                  ),
+                  const SizedBox(height: 24),
+                  ElevatedButton.icon(
+                    onPressed: () => Navigator.pushNamedAndRemoveUntil(
+                        context, '/main', (route) => route.isFirst,
+                        arguments: {'tabIndex': 1}),
+                    icon: const Icon(Icons.confirmation_number_outlined),
+                    label: const Text('Ver meus ingressos'),
+                  ),
+                  const SizedBox(height: 8),
+                  TextButton(
+                    onPressed: () => Navigator.pushNamedAndRemoveUntil(
+                        context, '/main', (route) => route.isFirst),
+                    child: const Text('Continuar explorando'),
+                  ),
+                ],
               ),
-              const SizedBox(height: 32),
-
-              // Actions
-              SizedBox(
-                width: double.infinity,
-                height: 50,
-                child: ElevatedButton.icon(
-                  onPressed: () {
-                    Navigator.of(context).pushNamedAndRemoveUntil(
-                      '/main',
-                      (route) => false,
-                      arguments: {'tabIndex': 1},
-                    );
-                  },
-                  icon: const Icon(Icons.confirmation_number_outlined),
-                  label: const Text(
-                    'Ver meus ingressos',
-                    style: TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFFE91E63),
-                    foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(14)),
-                    elevation: 0,
-                  ),
-                ),
-              ),
-              const SizedBox(height: 12),
-              SizedBox(
-                width: double.infinity,
-                height: 50,
-                child: OutlinedButton.icon(
-                  onPressed: () {
-                    Navigator.of(context).pushNamedAndRemoveUntil(
-                      '/main',
-                      (route) => false,
-                      arguments: {'tabIndex': 0},
-                    );
-                  },
-                  icon: const Icon(Icons.home_outlined),
-                  label: const Text(
-                    'Voltar ao início',
-                    style: TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: Colors.black87,
-                    side: BorderSide(color: Colors.grey.shade300),
-                    shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(14)),
-                  ),
-                ),
-              ),
-            ],
+            ),
           ),
         ),
       ),
     );
   }
+
+  Widget _line(String label, String value) => Padding(
+        padding: const EdgeInsets.only(bottom: 9),
+        child:
+            Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+          Text(label, style: const TextStyle(color: Color(0xFF756A73))),
+          Flexible(
+              child: Text(value,
+                  textAlign: TextAlign.end,
+                  style: const TextStyle(fontWeight: FontWeight.w800)))
+        ]),
+      );
 }

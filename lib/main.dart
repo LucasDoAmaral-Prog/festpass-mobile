@@ -1,83 +1,211 @@
 import 'package:flutter/material.dart';
 
+import 'blocs/auth_bloc.dart';
+import 'blocs/checkout_bloc.dart';
+import 'blocs/events_bloc.dart';
+import 'blocs/tickets_bloc.dart';
+import 'data/providers/address_data_provider.dart';
+import 'data/providers/auth_data_provider.dart';
+import 'data/providers/firebase_service.dart';
+import 'data/providers/events_data_provider.dart';
+import 'data/providers/tickets_data_provider.dart';
+import 'data/providers/via_cep_provider.dart';
 import 'features/auth/screens/login_screen.dart';
-import 'features/events/screens/home_screen.dart';
-import 'features/events/screens/event_details_screen.dart';
 import 'features/checkout/checkout_screen.dart';
 import 'features/checkout/confirmation_screen.dart';
-import 'features/tickets/screens/my_tickets_screen.dart';
+import 'features/events/screens/event_details_screen.dart';
+import 'features/events/screens/home_screen.dart';
 import 'features/profile/screens/profile_screen.dart';
+import 'features/tickets/screens/my_tickets_screen.dart';
+import 'shared/app_scope.dart';
 
-void main() {
-  runApp(const FestPassApp());
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  try {
+    final firebase = await FirebaseService.initialize();
+    final auth = AuthBloc(AuthDataProvider(firebase));
+    await auth.restoreSession();
+    runApp(FestPassApp(
+      auth: auth,
+      events: EventsBloc(EventsDataProvider(firebase)),
+      tickets: TicketsBloc(TicketsDataProvider(firebase)),
+      checkout: CheckoutBloc(
+        ViaCepProvider(),
+        AddressDataProvider(firebase),
+      ),
+    ));
+  } catch (error, stackTrace) {
+    debugPrint('Falha ao iniciar o Firebase: $error');
+    debugPrintStack(stackTrace: stackTrace);
+    runApp(FirebaseStartupErrorApp(error: error.toString()));
+  }
 }
 
-class FestPassApp extends StatelessWidget {
-  const FestPassApp({super.key});
+class FirebaseStartupErrorApp extends StatelessWidget {
+  final String error;
+
+  const FirebaseStartupErrorApp({super.key, required this.error});
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'FestPass',
       debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        useMaterial3: true,
-        scaffoldBackgroundColor: Colors.white,
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: const Color(0xFFE91E63),
-          brightness: Brightness.light,
-          primary: const Color(0xFFE91E63),
-          secondary: const Color(0xFF9C27B0),
-          surface: Colors.white,
-        ),
-        textTheme: const TextTheme(
-          displayLarge:
-              TextStyle(fontWeight: FontWeight.bold, color: Colors.black87),
-          titleLarge:
-              TextStyle(fontWeight: FontWeight.w700, color: Colors.black87),
-          bodyLarge: TextStyle(color: Colors.black87),
-          bodyMedium: TextStyle(color: Colors.black54),
-        ),
-        elevatedButtonTheme: ElevatedButtonThemeData(
-          style: ElevatedButton.styleFrom(
-            backgroundColor: const Color(0xFFE91E63),
-            foregroundColor: Colors.white,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(14),
+      theme: _theme(),
+      home: Scaffold(
+        body: SafeArea(
+          child: Center(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(28),
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 520),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    const Icon(
+                      Icons.cloud_off_outlined,
+                      size: 72,
+                      color: Color(0xFFE51F68),
+                    ),
+                    const SizedBox(height: 24),
+                    Text(
+                      'Firebase ainda não foi configurado',
+                      textAlign: TextAlign.center,
+                      style: Theme.of(context).textTheme.headlineMedium,
+                    ),
+                    const SizedBox(height: 12),
+                    const Text(
+                      'Para abrir o FestPass, conecte este projeto Flutter ao '
+                      'projeto Firebase usado no trabalho.',
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 24),
+                    Container(
+                      padding: const EdgeInsets.all(18),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(color: const Color(0xFFECE4E9)),
+                      ),
+                      child: const SelectableText(
+                        '1. Habilite Authentication > E-mail/senha\n'
+                        '2. Crie o Realtime Database\n'
+                        '3. Adicione android/app/google-services.json\n'
+                        '4. Execute novamente: flutter run',
+                        style: TextStyle(height: 1.65),
+                      ),
+                    ),
+                    const SizedBox(height: 18),
+                    ExpansionTile(
+                      title: const Text('Detalhes técnicos'),
+                      children: [
+                        Padding(
+                          padding: const EdgeInsets.all(12),
+                          child: SelectableText(
+                            error,
+                            style: Theme.of(context).textTheme.bodySmall,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
             ),
-            padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
-            elevation: 0,
           ),
-        ),
-        inputDecorationTheme: InputDecorationTheme(
-          filled: true,
-          fillColor: Colors.grey.shade50,
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: BorderSide(color: Colors.grey.shade300),
-          ),
-          enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: BorderSide(color: Colors.grey.shade300),
-          ),
-          focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: const BorderSide(color: Color(0xFFE91E63), width: 2),
-          ),
-          contentPadding:
-              const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
         ),
       ),
-      initialRoute: '/login',
-      routes: {
-        '/login': (context) => const LoginScreen(),
-        '/main': (context) => const MainNavigatorScreen(),
-        '/home': (context) => const HomeScreen(),
-        '/event_details': (context) => const EventDetailsScreen(),
-        '/checkout': (context) => const CheckoutScreen(),
-        '/confirmation': (context) => const ConfirmationScreen(),
-        '/tickets': (context) => const MyTicketsScreen(),
-      },
+    );
+  }
+}
+
+class FestPassApp extends StatelessWidget {
+  final AuthBloc auth;
+  final EventsBloc events;
+  final TicketsBloc tickets;
+  final CheckoutBloc checkout;
+
+  const FestPassApp({
+    super.key,
+    required this.auth,
+    required this.events,
+    required this.tickets,
+    required this.checkout,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return AppScope(
+      auth: auth,
+      events: events,
+      tickets: tickets,
+      checkout: checkout,
+      child: MaterialApp(
+        title: 'FestPass',
+        debugShowCheckedModeBanner: false,
+        theme: _theme(),
+        home: const AuthGate(),
+        routes: {
+          '/main': (_) => const MainNavigatorScreen(),
+          '/event_details': (_) => const EventDetailsScreen(),
+          '/checkout': (_) => const CheckoutScreen(),
+          '/confirmation': (_) => const ConfirmationScreen(),
+        },
+      ),
+    );
+  }
+}
+
+ThemeData _theme() {
+  const ink = Color(0xFF17131F);
+  const pink = Color(0xFFE51F68);
+  return ThemeData(
+    useMaterial3: true,
+    scaffoldBackgroundColor: const Color(0xFFFFFBFC),
+    colorScheme: ColorScheme.fromSeed(
+      seedColor: pink,
+      primary: pink,
+      secondary: const Color(0xFF7B2CBF),
+      surface: Colors.white,
+    ),
+    textTheme: const TextTheme(
+      headlineMedium: TextStyle(fontWeight: FontWeight.w900, color: ink),
+      titleLarge: TextStyle(fontWeight: FontWeight.w800, color: ink),
+      titleMedium: TextStyle(fontWeight: FontWeight.w700, color: ink),
+      bodyLarge: TextStyle(color: ink),
+      bodyMedium: TextStyle(color: Color(0xFF655D6D)),
+    ),
+    inputDecorationTheme: InputDecorationTheme(
+      filled: true,
+      fillColor: const Color(0xFFF7F2F5),
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(14),
+        borderSide: BorderSide.none,
+      ),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 15),
+    ),
+    elevatedButtonTheme: ElevatedButtonThemeData(
+      style: ElevatedButton.styleFrom(
+        backgroundColor: pink,
+        foregroundColor: Colors.white,
+        minimumSize: const Size.fromHeight(50),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+        textStyle: const TextStyle(fontWeight: FontWeight.w800),
+      ),
+    ),
+  );
+}
+
+class AuthGate extends StatelessWidget {
+  const AuthGate({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final auth = AppScope.of(context).auth;
+    return ListenableBuilder(
+      listenable: auth,
+      builder: (context, _) =>
+          auth.user == null ? const LoginScreen() : const MainNavigatorScreen(),
     );
   }
 }
@@ -90,99 +218,48 @@ class MainNavigatorScreen extends StatefulWidget {
 }
 
 class _MainNavigatorScreenState extends State<MainNavigatorScreen> {
-  int _currentIndex = 0;
-  bool _isInit = false;
+  int _index = 0;
+  String? _loadedUser;
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    if (!_isInit) {
-      final args = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
-      if (args != null && args['tabIndex'] != null) {
-        _currentIndex = args['tabIndex'] as int;
-      }
-      _isInit = true;
+    final scope = AppScope.of(context);
+    final userId = scope.auth.user!.id;
+    if (_loadedUser != userId) {
+      _loadedUser = userId;
+      scope.events.load(userId);
+      scope.tickets.load(userId);
+    }
+    final args = ModalRoute.of(context)?.settings.arguments;
+    if (args is Map && args['tabIndex'] is int) {
+      _index = args['tabIndex'] as int;
     }
   }
 
-  final List<Widget> _screens = [
-    const HomeScreen(),
-    const MyTicketsScreen(),
-    const ProfileScreen(),
-  ];
-
   @override
   Widget build(BuildContext context) {
+    const screens = [HomeScreen(), MyTicketsScreen(), ProfileScreen()];
     return Scaffold(
-      body: IndexedStack(
-        index: _currentIndex,
-        children: _screens,
-      ),
-      bottomNavigationBar: Container(
-        decoration: BoxDecoration(
-          color: Colors.white,
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.06),
-              blurRadius: 12,
-              offset: const Offset(0, -4),
-            ),
-          ],
-        ),
-        child: SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
-              children: [
-                _buildNavItem(0, Icons.explore, 'Explorar'),
-                _buildNavItem(1, Icons.confirmation_number, 'Ingressos'),
-                _buildNavItem(2, Icons.person, 'Perfil'),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildNavItem(int index, IconData icon, String label) {
-    final isSelected = _currentIndex == index;
-    return GestureDetector(
-      onTap: () => setState(() => _currentIndex = index),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-        decoration: BoxDecoration(
-          color: isSelected
-              ? const Color(0xFFE91E63).withOpacity(0.1)
-              : Colors.transparent,
-          borderRadius: BorderRadius.circular(20),
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              icon,
-              color: isSelected
-                  ? const Color(0xFFE91E63)
-                  : Colors.grey.shade400,
-              size: 24,
-            ),
-            const SizedBox(height: 4),
-            Text(
-              label,
-              style: TextStyle(
-                fontSize: 11,
-                fontWeight:
-                    isSelected ? FontWeight.bold : FontWeight.normal,
-                color: isSelected
-                    ? const Color(0xFFE91E63)
-                    : Colors.grey.shade400,
-              ),
-            ),
-          ],
-        ),
+      body: IndexedStack(index: _index, children: screens),
+      bottomNavigationBar: NavigationBar(
+        selectedIndex: _index,
+        onDestinationSelected: (value) => setState(() => _index = value),
+        indicatorColor: const Color(0xFFFFDCE9),
+        destinations: const [
+          NavigationDestination(
+              icon: Icon(Icons.explore_outlined),
+              selectedIcon: Icon(Icons.explore),
+              label: 'Explorar'),
+          NavigationDestination(
+              icon: Icon(Icons.confirmation_number_outlined),
+              selectedIcon: Icon(Icons.confirmation_number),
+              label: 'Ingressos'),
+          NavigationDestination(
+              icon: Icon(Icons.person_outline),
+              selectedIcon: Icon(Icons.person),
+              label: 'Perfil'),
+        ],
       ),
     );
   }

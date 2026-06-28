@@ -1,418 +1,238 @@
 import 'package:flutter/material.dart';
-import '../../../core/data/mock_events.dart';
-import '../../../shared/widgets/festpass_logo.dart';
+
+import '../../../core/models/ticket.dart';
+import '../../../shared/app_scope.dart';
 import '../../../shared/widgets/event_banner.dart';
 
-class MyTicketsScreen extends StatefulWidget {
+class MyTicketsScreen extends StatelessWidget {
   const MyTicketsScreen({super.key});
 
   @override
-  State<MyTicketsScreen> createState() => _MyTicketsScreenState();
+  Widget build(BuildContext context) {
+    final scope = AppScope.of(context);
+    return Scaffold(
+      appBar: AppBar(
+        title: const Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('Meus ingressos'),
+              Text('Sua área privada',
+                  style: TextStyle(fontSize: 11, fontWeight: FontWeight.normal))
+            ]),
+      ),
+      body: ListenableBuilder(
+        listenable: scope.tickets,
+        builder: (context, _) {
+          final bloc = scope.tickets;
+          if (bloc.loading && bloc.tickets.isEmpty) {
+            return const Center(child: CircularProgressIndicator());
+          }
+          if (bloc.tickets.isEmpty) {
+            return const _EmptyTickets();
+          }
+          return RefreshIndicator(
+            onRefresh: () => bloc.load(scope.auth.user!.id),
+            child: ListView.builder(
+              padding: const EdgeInsets.fromLTRB(18, 12, 18, 28),
+              itemCount: bloc.tickets.length,
+              itemBuilder: (context, index) =>
+                  _TicketCard(ticket: bloc.tickets[index]),
+            ),
+          );
+        },
+      ),
+    );
+  }
 }
 
-class _MyTicketsScreenState extends State<MyTicketsScreen> {
-  String _filterValue = 'Disponíveis';
-
-  // Simulated purchased tickets
-  final List<Map<String, dynamic>> _tickets = [
-    {
-      'event': mockEvents[0],
-      'lote': '1º',
-      'ticketNumber': 435232,
-      'dateStart': '21/09/2026 14:00',
-      'dateEnd': '22/09/2025 00:00',
-    },
-    {
-      'event': mockEvents[1],
-      'lote': '2º',
-      'ticketNumber': 512890,
-      'dateStart': '05/10/2025 22:00',
-      'dateEnd': '06/10/2025 06:00',
-    },
-    {
-      'event': mockEvents[2],
-      'lote': 'VIP',
-      'ticketNumber': 678421,
-      'dateStart': '12/10/2025 15:00',
-      'dateEnd': '13/10/2025 02:00',
-    },
-  ];
+class _TicketCard extends StatelessWidget {
+  final TicketData ticket;
+  const _TicketCard({required this.ticket});
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.white,
-      body: SafeArea(
-        child: SingleChildScrollView(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Header with logo
-              Padding(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                child: Center(child: const FestPassLogoWithSubtitle()),
-              ),
-
-              // Title
-              const Padding(
-                padding: EdgeInsets.symmetric(horizontal: 20),
-                child: Text(
-                  'Meus ingressos',
-                  style: TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.black87,
-                  ),
-                ),
-              ),
-              const SizedBox(height: 16),
-
-              // Search bar
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                child: Container(
-                  height: 48,
-                  decoration: BoxDecoration(
-                    color: Colors.grey.shade100,
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Row(
-                    children: [
-                      const SizedBox(width: 12),
-                      Icon(Icons.search, color: Colors.grey.shade400),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: TextField(
-                          decoration: InputDecoration(
-                            hintText:
-                                'Buscar por ano de ingresso, data, local...',
-                            hintStyle: TextStyle(
-                                color: Colors.grey.shade400, fontSize: 13),
-                            border: InputBorder.none,
-                            enabledBorder: InputBorder.none,
-                            focusedBorder: InputBorder.none,
-                            contentPadding: EdgeInsets.zero,
-                            isDense: true,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              const SizedBox(height: 16),
-
-              // Filter row
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                child: Row(
-                  children: [
-                    const Text(
-                      'Ordenar por:',
-                      style: TextStyle(
-                        fontWeight: FontWeight.w500,
-                        color: Colors.black87,
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 12, vertical: 6),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF9C27B0),
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      child: DropdownButtonHideUnderline(
-                        child: DropdownButton<String>(
-                          value: _filterValue,
-                          isDense: true,
-                          icon: const Icon(Icons.keyboard_arrow_down,
-                              color: Colors.white, size: 18),
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 13,
-                            fontWeight: FontWeight.w500,
-                          ),
-                          dropdownColor: const Color(0xFF9C27B0),
-                          items: ['Disponíveis', 'Recentes', 'Mais antigos']
-                              .map((e) => DropdownMenuItem(
-                                    value: e,
-                                    child: Text(e),
-                                  ))
-                              .toList(),
-                          onChanged: (value) =>
-                              setState(() => _filterValue = value!),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 20),
-
-              // Tickets list
-              ListView.builder(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                itemCount: _tickets.length,
-                itemBuilder: (context, index) {
-                  final ticket = _tickets[index];
-                  final event = ticket['event'] as EventData;
-                  return _buildTicketCard(context, ticket, event);
-                },
-              ),
-              const SizedBox(height: 16),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildTicketCard(
-      BuildContext context, Map<String, dynamic> ticket, EventData event) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 20),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.08),
-            blurRadius: 16,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
+    final canceled = ticket.status == 'cancelado';
+    return Card(
+      margin: const EdgeInsets.only(bottom: 16),
+      elevation: 0,
+      color: Colors.white,
+      clipBehavior: Clip.antiAlias,
+      shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+          side: const BorderSide(color: Color(0xFFECE4E9))),
       child: Column(
         children: [
-          // Event banner
-          EventBanner(
-            colorIndex: event.colorIndex,
-            height: 160,
-            borderRadius:
-                const BorderRadius.vertical(top: Radius.circular(20)),
+          ColorFiltered(
+            colorFilter: canceled
+                ? const ColorFilter.mode(Colors.grey, BlendMode.saturation)
+                : const ColorFilter.mode(Colors.transparent, BlendMode.dst),
+            child: EventBanner(colorIndex: ticket.colorIndex, height: 120),
           ),
-
-          // Ticket info
           Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  event.name,
-                  style: const TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 16,
-                    color: Colors.black87,
-                  ),
-                ),
-                const SizedBox(height: 12),
-
-                // Lote and ticket number
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text('Lote',
-                            style: TextStyle(
-                                fontSize: 12, color: Colors.grey.shade500)),
-                        Text(
-                          ticket['lote'],
-                          style: const TextStyle(
-                              fontWeight: FontWeight.bold, fontSize: 14),
-                        ),
-                      ],
-                    ),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.end,
-                      children: [
-                        Text('Número do Ingresso',
-                            style: TextStyle(
-                                fontSize: 12, color: Colors.grey.shade500)),
-                        Text(
-                          '${ticket['ticketNumber']}',
-                          style: const TextStyle(
-                              fontWeight: FontWeight.bold, fontSize: 14),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 12),
-
-                // Date
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text('Data do evento',
-                        style: TextStyle(
-                            fontSize: 12, color: Colors.grey.shade500)),
-                    Text(
-                      '${ticket['dateStart']} → ${ticket['dateEnd']}',
-                      style: const TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 13,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 8),
-
-                // Info note
+            padding: const EdgeInsets.all(17),
+            child:
+                Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Row(children: [
+                Expanded(
+                    child: Text(ticket.eventName,
+                        style: Theme.of(context).textTheme.titleMedium)),
                 Container(
                   padding:
-                      const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
                   decoration: BoxDecoration(
-                    color: Colors.grey.shade50,
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Text(
-                    'O ingresso pode valer para dias específicos do evento, verifique no nome do lote comprado!',
-                    style: TextStyle(
-                      fontSize: 11,
-                      color: Colors.grey.shade600,
-                      fontStyle: FontStyle.italic,
-                    ),
-                  ),
+                      color: canceled
+                          ? const Color(0xFFF2ECEF)
+                          : const Color(0xFFE7F8EE),
+                      borderRadius: BorderRadius.circular(20)),
+                  child: Text(canceled ? 'CANCELADO' : 'ATIVO',
+                      style: TextStyle(
+                          color: canceled
+                              ? const Color(0xFF7B6D75)
+                              : const Color(0xFF198754),
+                          fontSize: 10,
+                          fontWeight: FontWeight.w900)),
                 ),
-                const SizedBox(height: 16),
-
-                // Action buttons
-                Row(
-                  children: [
-                    Expanded(
-                      child: SizedBox(
-                        height: 44,
-                        child: ElevatedButton.icon(
-                          onPressed: () {
-                            _showQRCodeDialog(context, event);
-                          },
-                          icon: const Icon(Icons.qr_code, size: 18),
-                          label: const Text(
-                            'Ver ingresso',
-                            style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 13,
-                            ),
-                          ),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFFE91E63),
-                            foregroundColor: Colors.white,
-                            shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12)),
-                            elevation: 0,
-                          ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: SizedBox(
-                        height: 44,
-                        child: OutlinedButton.icon(
-                          onPressed: () {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text(
-                                    'Funcionalidade de revenda em breve!'),
-                                behavior: SnackBarBehavior.floating,
-                              ),
-                            );
-                          },
-                          icon: const Icon(Icons.monetization_on_outlined,
-                              size: 18),
-                          label: const Text(
-                            'Revender',
-                            style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 13,
-                            ),
-                          ),
-                          style: OutlinedButton.styleFrom(
-                            foregroundColor: Colors.black87,
-                            side: BorderSide(color: Colors.grey.shade300),
-                            shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12)),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
+              ]),
+              const SizedBox(height: 12),
+              _detail(Icons.calendar_today_outlined, ticket.eventDate),
+              _detail(Icons.location_on_outlined, ticket.eventLocation),
+              _detail(Icons.confirmation_number_outlined,
+                  '${ticket.quantity} × ${ticket.lot} · #FP${ticket.displayId}'),
+              const Divider(height: 28),
+              if (!canceled)
+                Row(children: [
+                  Expanded(
+                      child: ElevatedButton.icon(
+                          onPressed: () => _showTicket(context),
+                          icon: const Icon(Icons.qr_code_2),
+                          label: const Text('Abrir'))),
+                  const SizedBox(width: 10),
+                  IconButton.outlined(
+                      tooltip: 'Cancelar ingresso',
+                      onPressed: () => _confirmCancel(context),
+                      icon: const Icon(Icons.cancel_outlined)),
+                ])
+              else
+                SizedBox(
+                    width: double.infinity,
+                    child: OutlinedButton.icon(
+                        onPressed: () => _confirmDelete(context),
+                        icon: const Icon(Icons.delete_outline),
+                        label: const Text('Excluir do histórico'))),
+            ]),
           ),
         ],
       ),
     );
   }
 
-  void _showQRCodeDialog(BuildContext context, EventData event) {
-    showDialog(
+  Widget _detail(IconData icon, String text) => Padding(
+        padding: const EdgeInsets.only(bottom: 7),
+        child: Row(children: [
+          Icon(icon, size: 16, color: const Color(0xFF857A82)),
+          const SizedBox(width: 8),
+          Expanded(
+              child: Text(text,
+                  style:
+                      const TextStyle(fontSize: 12, color: Color(0xFF655D63))))
+        ]),
+      );
+
+  Future<void> _confirmCancel(BuildContext context) async {
+    final confirm = await showDialog<bool>(
+        context: context,
+        builder: (dialogContext) => AlertDialog(
+                title: const Text('Cancelar ingresso?'),
+                content: const Text(
+                    'O ingresso ficará inválido. Depois, você poderá excluí-lo do histórico.'),
+                actions: [
+                  TextButton(
+                      onPressed: () => Navigator.pop(dialogContext, false),
+                      child: const Text('Voltar')),
+                  FilledButton(
+                      onPressed: () => Navigator.pop(dialogContext, true),
+                      child: const Text('Cancelar ingresso'))
+                ]));
+    if (confirm == true && context.mounted) {
+      await AppScope.of(context).tickets.cancel(ticket.id);
+    }
+  }
+
+  Future<void> _confirmDelete(BuildContext context) async {
+    final confirm = await showDialog<bool>(
+        context: context,
+        builder: (dialogContext) => AlertDialog(
+                title: const Text('Excluir registro?'),
+                content: const Text(
+                    'Esta ação remove definitivamente o ingresso cancelado do banco de dados.'),
+                actions: [
+                  TextButton(
+                      onPressed: () => Navigator.pop(dialogContext, false),
+                      child: const Text('Voltar')),
+                  FilledButton(
+                      onPressed: () => Navigator.pop(dialogContext, true),
+                      child: const Text('Excluir'))
+                ]));
+    if (confirm == true && context.mounted) {
+      await AppScope.of(context).tickets.delete(ticket.id);
+    }
+  }
+
+  void _showTicket(BuildContext context) {
+    showModalBottomSheet(
       context: context,
-      builder: (context) => Dialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      isScrollControlled: true,
+      showDragHandle: true,
+      builder: (_) => SafeArea(
         child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                event.name,
-                style: const TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 18,
-                ),
-              ),
-              const SizedBox(height: 20),
-              Container(
-                width: 200,
-                height: 200,
+          padding: const EdgeInsets.fromLTRB(24, 8, 24, 30),
+          child: Column(mainAxisSize: MainAxisSize.min, children: [
+            Text(ticket.eventName,
+                style: Theme.of(context).textTheme.titleLarge,
+                textAlign: TextAlign.center),
+            const SizedBox(height: 8),
+            Text(ticket.lot, style: Theme.of(context).textTheme.bodyLarge),
+            const SizedBox(height: 22),
+            Container(
+                width: 220,
+                height: 220,
                 decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: Colors.grey.shade200),
-                ),
-                child: const Center(
-                  child: Icon(
-                    Icons.qr_code_2,
-                    size: 150,
-                    color: Colors.black87,
-                  ),
-                ),
-              ),
-              const SizedBox(height: 16),
-              Text(
-                'Apresente este QR Code na entrada',
-                style: TextStyle(
-                  color: Colors.grey.shade600,
-                  fontSize: 13,
-                ),
-              ),
-              const SizedBox(height: 20),
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: () => Navigator.pop(context),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFFE91E63),
-                    foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12)),
-                  ),
-                  child: const Text('Fechar'),
-                ),
-              ),
-            ],
-          ),
+                    color: Colors.white,
+                    border:
+                        Border.all(color: const Color(0xFFE2D9DF), width: 8),
+                    borderRadius: BorderRadius.circular(14)),
+                child: const Icon(Icons.qr_code_2, size: 180)),
+            const SizedBox(height: 14),
+            Text('#FP${ticket.displayId}',
+                style: const TextStyle(
+                    fontWeight: FontWeight.w900, letterSpacing: 2)),
+            const SizedBox(height: 6),
+            const Text('Apresente este código na entrada.',
+                style: TextStyle(color: Color(0xFF756A73))),
+          ]),
         ),
       ),
     );
   }
+}
+
+class _EmptyTickets extends StatelessWidget {
+  const _EmptyTickets();
+  @override
+  Widget build(BuildContext context) => Center(
+        child: Padding(
+          padding: const EdgeInsets.all(32),
+          child: Column(mainAxisSize: MainAxisSize.min, children: [
+            const Icon(Icons.confirmation_number_outlined,
+                size: 64, color: Color(0xFFB8ABB4)),
+            const SizedBox(height: 16),
+            Text('Nenhum ingresso ainda',
+                style: Theme.of(context).textTheme.titleLarge),
+            const SizedBox(height: 8),
+            const Text(
+                'Quando você concluir uma compra, ela aparecerá aqui e continuará disponível depois de fechar o app.',
+                textAlign: TextAlign.center),
+          ]),
+        ),
+      );
 }
