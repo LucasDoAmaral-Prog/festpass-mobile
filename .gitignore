@@ -12,6 +12,23 @@
 .swiftpm/
 migrate_working_dir/
 
+# Local presentation notes
+ROTEIRO_APRESENTACAO.md
+
+# Environment files and local secrets
+.env
+.env.*
+!.env.example
+*.pem
+*.p12
+*.pfx
+*.key
+*.jks
+*.keystore
+**/key.properties
+**/*service-account*.json
+**/firebase-adminsdk-*.json
+
 # IntelliJ related
 *.iml
 *.ipr

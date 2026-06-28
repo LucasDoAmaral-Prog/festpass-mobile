@@ -1,56 +1,109 @@
 # FestPass
 
-Aplicativo Flutter para descobrir eventos universitários, salvar favoritos e comprar/gerenciar ingressos. A implementação foi organizada especificamente para demonstrar os requisitos acadêmicos de navegação, internet, persistência, autenticação e divisão em três camadas.
+Aplicativo mobile para descobrir eventos universitários e gerenciar toda a jornada de compra de ingressos em um só lugar.
 
-## Como executar
+> **Status:** concluído — versão `1.0.0+1`.
 
-O projeto está preparado para Android. Com Flutter e as CLIs do Firebase instalados:
+## Funcionalidades
 
-```bash
-flutter pub get
-dart pub global activate flutterfire_cli
-flutterfire configure
-firebase deploy --only database
-flutter run
-```
+- Cadastro, login, logout e restauração de sessão com Firebase Authentication.
+- Catálogo de eventos com busca por nome, cidade ou categoria.
+- Favoritos privados e persistentes para cada usuário.
+- Detalhes do evento, seleção de lote e quantidade de ingressos.
+- Checkout com Pix ou cartão de crédito.
+- Consulta de CEP pela API ViaCEP e preenchimento automático do endereço.
+- Histórico de ingressos com visualização, cancelamento e exclusão.
+- Perfil editável com nome, telefone e endereço salvo.
+- Isolamento dos dados privados por UID no Firebase Realtime Database.
 
-No Firebase Console, habilite **Authentication > E-mail/senha** e crie o **Realtime Database**. O aplicativo Android está registrado no projeto `festpass-a318c` pelo arquivo `android/app/google-services.json`. Na primeira abertura, use **Criar uma conta**; a sessão é mantida pelo Firebase Authentication.
+## Tecnologias
 
-## Arquitetura em três camadas
+- Flutter e Dart
+- Firebase Authentication
+- Firebase Realtime Database
+- API REST ViaCEP
+- BLoC com `ChangeNotifier`
+- Material Design 3
+
+## Arquitetura
+
+O projeto utiliza três camadas para separar interface, estado e acesso a dados:
 
 ```text
 Interface (lib/features)
-        ↓ ações / estado
+        ↓ ações e estado
 BLoC (lib/blocs)
         ↓ regras e coordenação
 Data Provider (lib/data/providers)
         ↓
-Firebase Auth + Realtime Database + API ViaCEP/HTTP
+Firebase Auth + Realtime Database + ViaCEP
 ```
 
-- **Interface gráfica:** telas de autenticação, exploração, detalhes, checkout, ingressos e perfil.
-- **BLoC:** estado e regras de autenticação, eventos/favoritos, compra/ingressos e CEP/endereço.
-- **Data Provider:** operações no Firebase Auth/Realtime Database e requisição REST que recebe JSON.
+```text
+lib/
+├── blocs/             # Estado e regras de negócio
+├── core/              # Modelos e dados iniciais
+├── data/providers/    # Firebase e integrações HTTP
+├── features/          # Telas organizadas por funcionalidade
+├── shared/            # Escopo e componentes reutilizáveis
+└── main.dart          # Inicialização, tema, rotas e navegação
+```
 
-O Realtime Database contém `events` e, dentro de `users/{uid}`, os dados privados de `profile`, `favorites`, `tickets` e `address`. Os eventos iniciais são semeados no primeiro acesso autenticado. As regras de `database.rules.json` garantem que cada usuário acesse apenas os próprios dados.
+No Realtime Database, os eventos ficam em `events`. Os dados particulares são armazenados em `users/{uid}`, nos nós `profile`, `favorites`, `tickets` e `address`. As regras em `database.rules.json` exigem autenticação e limitam cada usuário ao próprio UID.
 
-## Checklist da entrega
+## Como executar
 
-- Navegação inferior deixa Explorar, Ingressos e Perfil a um toque; detalhes e checkout formam uma jornada linear.
-- Internet: no checkout, a lupa do CEP chama `https://viacep.com.br/ws/{cep}/json/` e preenche o formulário com o JSON recebido.
-- Armazenamento Firebase: perfil, favoritos, endereço e ingressos persistem no Realtime Database.
-- Autenticação não hardcoded: cadastro, login, logout e restauração de sessão usam Firebase Authentication; dados privados são vinculados ao UID autenticado.
-- Listagem com figuras: eventos vêm do Realtime Database e cada categoria possui banner gráfico identificável, com cores e iniciais próprias.
-- CRUD: compra cria ingresso; área privada lê; cancelamento atualiza; exclusão remove. Perfil e endereço também podem ser atualizados.
+### Pré-requisitos
 
-## Roteiro curto para a apresentação
+- Flutter com Dart SDK `>=3.6.0 <4.0.0`
+- Android Studio ou outro ambiente Android configurado
+- Dispositivo físico ou emulador Android
 
-1. Explique que o FestPass reúne descoberta e gestão de ingressos para festas e eventos universitários.
-2. Crie duas contas diferentes e mostre que favoritos e ingressos de uma não aparecem na outra.
-3. Pesquise um evento, favorite-o e abra os detalhes.
-4. Escolha lote/quantidade; no checkout digite um CEP real e toque na lupa. Destaque o selo “ViaCEP · internet”.
-5. Conclua a compra, abra o ingresso e seu QR visual, cancele e exclua o registro.
-6. Edite nome/telefone no Perfil e explique o endereço salvo.
-7. Mostre o Firebase Console com Authentication e Realtime Database; depois abra `firebase_service.dart`, uma tela, seu BLoC e seu Data Provider para evidenciar as três camadas.
+### Instalação
 
-> Para demonstrar a persistência, abra **Firebase Console > Realtime Database > Dados** e mostre os nós sendo atualizados após cadastrar, favoritar e comprar.
+```bash
+git clone https://github.com/LucasDoAmaral-Prog/festpass-mobile.git
+cd festpass-mobile
+flutter pub get
+```
+
+Crie a configuração local a partir do modelo:
+
+```bash
+cp .env.example .env
+```
+
+No PowerShell, use `Copy-Item .env.example .env`. Preencha o `.env` com a configuração do cliente Firebase e execute:
+
+```bash
+flutter run --dart-define-from-file=.env
+```
+
+Na primeira execução, crie uma conta pela tela inicial. A sessão e os dados do usuário são sincronizados pelo Firebase.
+
+Para conectar o aplicativo a outro projeto Firebase, habilite **Authentication por e-mail/senha** e o **Realtime Database**, substitua a configuração do cliente e publique as regras:
+
+```bash
+dart pub global activate flutterfire_cli
+flutterfire configure
+firebase deploy --only database
+```
+
+## Qualidade
+
+Execute as verificações locais antes de gerar uma versão:
+
+```bash
+flutter analyze
+flutter test
+```
+
+## Segurança
+
+- Senhas são tratadas pelo Firebase Authentication e não são armazenadas pelo aplicativo.
+- Perfil, favoritos, endereço e ingressos são protegidos por UID nas regras do banco.
+- O `.env` local é ignorado pelo Git; somente o modelo vazio `.env.example` é versionado.
+- Chaves privadas, keystores e credenciais de contas de serviço são bloqueados pelo `.gitignore`.
+- `google-services.json` e as opções Firebase presentes no cliente contêm identificadores públicos necessários para o app; não são chaves administrativas. Chaves privadas e arquivos de conta de serviço nunca devem ser versionados.
+
+Para reduzir uso indevido da configuração pública, aplique restrições de aplicativo e de API à chave no Google Cloud Console.
